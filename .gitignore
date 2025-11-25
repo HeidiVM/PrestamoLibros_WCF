@@ -1,0 +1,17 @@
+# Build results
+bin/
+obj/
+out/
+
+# Visual Studio specific
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+
+# Visual Studio Code
+.vscode/
