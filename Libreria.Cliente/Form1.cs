@@ -15,7 +15,6 @@ namespace Libreria.Cliente
 {
     public partial class Form1 : Form
     {
-        // Clientes WCF
         BookServiceClient bookClient;
         UserServiceClient userClient;
         LoanServiceClient loanClient;
@@ -23,197 +22,151 @@ namespace Libreria.Cliente
         public Form1()
         {
             InitializeComponent();
-
-            // Inicializar clientes
             bookClient = new BookServiceClient();
             userClient = new UserServiceClient();
             loanClient = new LoanServiceClient();
 
-            // Cargar datos iniciales
             CargarLibros();
             CargarUsuarios();
         }
 
-        // ------------------------------
-        // CARGAR LIBROS
-        // ------------------------------
+        // ----------------------------
+        // LIBROS
+        // ----------------------------
         private void CargarLibros()
         {
-            try
-            {
-                dgvBooks.DataSource = bookClient.GetAllBooks();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error cargando libros: " + ex.Message);
-            }
+            dgvBooks.DataSource = bookClient.GetAllBooks();
         }
 
-        // ------------------------------
-        // CARGAR USUARIOS
-        // ------------------------------
-        private void CargarUsuarios()
-        {
-            try
-            {
-                dgvUsers.DataSource = userClient.GetAllUsers();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error cargando usuarios: " + ex.Message);
-            }
-        }
-
-        // ------------------------------
-        // CARGAR PRÉSTAMOS DE UN USUARIO
-        // ------------------------------
-        private void CargarPrestamos(int userId)
-        {
-            try
-            {
-                var prestamos = loanClient.GetLoansByUser(userId);
-                dgvLoans.DataSource = prestamos;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error cargando préstamos: " + ex.Message);
-            }
-        }
-
-        // ------------------------------
-        // AGREGAR LIBRO
-        // ------------------------------
         private void btnAddBook_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtBookTitle.Text))
+            if (!int.TryParse(txtBookId.Text.Trim(), out int id) ||
+                string.IsNullOrWhiteSpace(txtBookTitle.Text) ||
+                string.IsNullOrWhiteSpace(txtBookAuthor.Text) ||
+                !int.TryParse(txtBookYear.Text.Trim(), out int year))
             {
-                MessageBox.Show("Ingrese un título de libro.");
+                MessageBox.Show("Completa todos los campos correctamente.");
                 return;
             }
 
             var book = new Book
             {
-                Id = 0, // WCF puede asignar Id automáticamente
-                Title = txtBookTitle.Text.Trim()
+                Id = id,
+                Title = txtBookTitle.Text.Trim(),
+                Author = txtBookAuthor.Text.Trim(),
+                Year = year
             };
 
-            try
-            {
-                bool ok = bookClient.AddBook(book);
-                if (ok)
-                {
-                    MessageBox.Show("Libro agregado correctamente.");
-                    CargarLibros();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al agregar libro: " + ex.Message);
-            }
+            bool ok = bookClient.AddBook(book);
+            MessageBox.Show(ok ? "Libro agregado." : "Error agregando libro.");
+            CargarLibros();
         }
 
-        // ------------------------------
-        // AGREGAR USUARIO
-        // ------------------------------
+        private void btnUpdateBook_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtBookId.Text.Trim(), out int id) ||
+                string.IsNullOrWhiteSpace(txtBookTitle.Text) ||
+                string.IsNullOrWhiteSpace(txtBookAuthor.Text) ||
+                !int.TryParse(txtBookYear.Text.Trim(), out int year))
+            {
+                MessageBox.Show("Completa todos los campos correctamente.");
+                return;
+            }
+
+            var book = new Book
+            {
+                Id = id,
+                Title = txtBookTitle.Text.Trim(),
+                Author = txtBookAuthor.Text.Trim(),
+                Year = year
+            };
+
+            bool ok = bookClient.UpdateBook(book);
+            MessageBox.Show(ok ? "Libro actualizado." : "Error actualizando libro.");
+            CargarLibros();
+        }
+
+        private void btnDeleteBook_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtBookId.Text.Trim(), out int id))
+            {
+                MessageBox.Show("Ingresa un ID válido.");
+                return;
+            }
+
+            bool ok = bookClient.DeleteBook(id);
+            MessageBox.Show(ok ? "Libro eliminado." : "Error eliminando libro.");
+            CargarLibros();
+        }
+
+        // ----------------------------
+        // USUARIOS
+        // ----------------------------
+        private void CargarUsuarios()
+        {
+            dgvUsers.DataSource = userClient.GetAllUsers();
+        }
+
         private void btnAddUser_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtUserName.Text))
+            if (!int.TryParse(txtUserId.Text.Trim(), out int id) ||
+                string.IsNullOrWhiteSpace(txtUserName.Text))
             {
-                MessageBox.Show("Ingrese un nombre de usuario.");
+                MessageBox.Show("Completa todos los campos correctamente.");
                 return;
             }
 
             var user = new User
             {
-                Id = 0,
+                Id = id,
                 Name = txtUserName.Text.Trim()
             };
 
-            try
-            {
-                bool ok = userClient.RegisterUser(user);
-                if (ok)
-                {
-                    MessageBox.Show("Usuario agregado correctamente.");
-                    CargarUsuarios();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al agregar usuario: " + ex.Message);
-            }
+            bool ok = userClient.RegisterUser(user);
+            MessageBox.Show(ok ? "Usuario agregado." : "Error agregando usuario.");
+            CargarUsuarios();
         }
 
-        // ------------------------------
-        // REGISTRAR PRÉSTAMO
-        // ------------------------------
+
+        // ----------------------------
+        // PRÉSTAMOS
+        // ----------------------------
         private void btnCreateLoan_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(txtLoanUserId.Text.Trim(), out int userId))
+            if (!int.TryParse(txtLoanUserId.Text.Trim(), out int userId) ||
+                !int.TryParse(txtLoanBookId.Text.Trim(), out int bookId))
             {
-                MessageBox.Show("Id de usuario inválido.");
+                MessageBox.Show("Ingrese IDs válidos.");
                 return;
             }
 
-            if (!int.TryParse(txtLoanBookId.Text.Trim(), out int bookId))
-            {
-                MessageBox.Show("Id de libro inválido.");
-                return;
-            }
-
-            try
-            {
-                bool ok = loanClient.BorrowBook(userId, bookId);
-                if (ok)
-                {
-                    MessageBox.Show("Préstamo registrado correctamente.");
-                    CargarPrestamos(userId);
-                }
-                else
-                {
-                    MessageBox.Show("No se pudo registrar el préstamo.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al registrar préstamo: " + ex.Message);
-            }
+            bool ok = loanClient.BorrowBook(userId, bookId);
+            MessageBox.Show(ok ? "Préstamo registrado." : "Error registrando préstamo.");
+            CargarPrestamos(userId);
         }
 
-        // ------------------------------
-        // DEVOLVER LIBRO
-        // ------------------------------
         private void btnReturnLoan_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(txtLoanUserId.Text.Trim(), out int userId))
+            if (!int.TryParse(txtLoanUserId.Text.Trim(), out int userId) ||
+                !int.TryParse(txtLoanBookId.Text.Trim(), out int bookId))
             {
-                MessageBox.Show("Id de usuario inválido.");
+                MessageBox.Show("Ingrese IDs válidos.");
                 return;
             }
 
-            if (!int.TryParse(txtLoanBookId.Text.Trim(), out int bookId))
-            {
-                MessageBox.Show("Id de libro inválido.");
-                return;
-            }
+            bool ok = loanClient.ReturnBook(userId, bookId);
+            MessageBox.Show(ok ? "Libro devuelto." : "Error devolviendo libro.");
+            CargarPrestamos(userId);
+        }
 
-            try
-            {
-                bool ok = loanClient.ReturnBook(userId, bookId);
-                if (ok)
-                {
-                    MessageBox.Show("Libro devuelto correctamente.");
-                    CargarPrestamos(userId);
-                }
-                else
-                {
-                    MessageBox.Show("No se pudo devolver el libro.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al devolver libro: " + ex.Message);
-            }
+        private void CargarPrestamos(int userId)
+        {
+            dgvLoans.DataSource = loanClient.GetLoansByUser(userId);
+        }
+
+        private void lblLoanBookId_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
